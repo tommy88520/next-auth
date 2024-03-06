@@ -8,10 +8,7 @@ import { signIn } from "@/auth";
 import { LoginSchema } from "@/schemas";
 import { getUserByEmail } from "@/data/user";
 // import { getTwoFactorTokenByEmail } from "@/data/two-factor-token";
-// import {
-//   sendVerificationEmail,
-//   sendTwoFactorTokenEmail,
-// } from "@/lib/mail";
+import { sendVerificationEmail, sendTwoFactorTokenEmail } from "@/lib/mail";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
 import {
   generateVerificationToken,
@@ -43,13 +40,16 @@ export const login = async (
     const verificationToken = await generateVerificationToken(
       existingUser.email
     );
+    const error = await sendVerificationEmail(
+      verificationToken.email,
+      verificationToken.token
+    );
+
+    if (error) {
+      return { error: "Error sending confirmation email!" };
+    }
     return { success: "Confirmation email sent!" };
   }
-
-  //   await sendVerificationEmail(
-  //     verificationToken.email,
-  //     verificationToken.token,
-  //   );
 
   // }
 
