@@ -8,19 +8,22 @@ import { signIn } from "@/auth";
 import { LoginSchema } from "@/schemas";
 import { getUserByEmail } from "@/data/user";
 import { getTwoFactorTokenByEmail } from "@/data/two-factor-token";
-import { sendVerificationEmail, sendTwoFactorTokenEmail } from "@/lib/mail";
+import { 
+  sendVerificationEmail,
+  sendTwoFactorTokenEmail,
+} from "@/lib/mail";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
-import {
+import { 
   generateVerificationToken,
   generateTwoFactorToken
 } from "@/lib/tokens";
-import {
+import { 
   getTwoFactorConfirmationByUserId
 } from "@/data/two-factor-confirmation";
 
 export const login = async (
   values: z.infer<typeof LoginSchema>,
-  callbackUrl?: string | null
+  callbackUrl?: string | null,
 ) => {
   const validatedFields = LoginSchema.safeParse(values);
 
@@ -33,28 +36,24 @@ export const login = async (
   const existingUser = await getUserByEmail(email);
 
   if (!existingUser || !existingUser.email || !existingUser.password) {
-    return { error: "Email does not exist!" };
+    return { error: "Email does not exist!" }
   }
 
   if (!existingUser.emailVerified) {
     const verificationToken = await generateVerificationToken(
-      existingUser.email
-    );
-    const error = await sendVerificationEmail(
-      verificationToken.email,
-      verificationToken.token
+      existingUser.email,
     );
 
-    if (error) {
-      return { error: "Error sending confirmation email!" };
-    }
+    await sendVerificationEmail(
+      verificationToken.email,
+      verificationToken.token,
+    );
+
     return { success: "Confirmation email sent!" };
   }
 
-  // }
-
   if (existingUser.isTwoFactorEnabled && existingUser.email) {
-    if (code) { 
+    if (code) {
       const twoFactorToken = await getTwoFactorTokenByEmail(
         existingUser.email
       );
@@ -76,7 +75,7 @@ export const login = async (
       await db.twoFactorToken.delete({
         where: { id: twoFactorToken.id }
       });
-  
+
       const existingConfirmation = await getTwoFactorConfirmationByUserId(
         existingUser.id
       );
@@ -93,6 +92,7 @@ export const login = async (
         }
       });
     } else {
+      console.log(123)
       const twoFactorToken = await generateTwoFactorToken(existingUser.email)
       await sendTwoFactorTokenEmail(
         twoFactorToken.email,
@@ -107,15 +107,15 @@ export const login = async (
     await signIn("credentials", {
       email,
       password,
-      redirectTo: DEFAULT_LOGIN_REDIRECT,
-    });
+      redirectTo: callbackUrl || DEFAULT_LOGIN_REDIRECT,
+    })
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {
         case "CredentialsSignin":
-          return { error: "Invalid credentials!" };
+          return { error: "Invalid credentials!" }
         default:
-          return { error: "Something went wrong!" };
+          return { error: "Something went wrong!" }
       }
     }
 
