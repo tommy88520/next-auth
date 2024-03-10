@@ -92,7 +92,7 @@ export const login = async (
         }
       });
     } else {
-      console.log(123)
+
       const twoFactorToken = await generateTwoFactorToken(existingUser.email)
       await sendTwoFactorTokenEmail(
         twoFactorToken.email,
